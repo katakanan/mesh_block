@@ -1,5 +1,7 @@
 from enum import Enum
-
+import asyncio
+from bleak import BleakClient, discover
+from struct import pack
 
 # UUID
 CORE_INDICATE_UUID = "72c90005-57a9-4d40-b746-534e22ec9f9e"
@@ -20,15 +22,35 @@ class MESH_TYPE(Enum):
     MESH_100GP = "MESH-100GP"
 
 
-class MESH:
-    def __init__(self, name: MESH_TYPE, event: MESH_EVENT = None):
-        self.name = name
-        default_event = MESH_EVENT()
-        self.event = default_event if event == None else event
+class MESH_EVENT:
+    def __init__(self) -> None:
+        self.name = ""
 
-    def scan(self):
+    def on_receive_indicate(self, sender, data: bytearray):
+        data = bytes(data)
+        print("[indicate]", data)
+
+    def on_receive_notify(self, sender, data: bytearray):
+        if (
+            data[MESSAGE_TYPE_INDEX] != MESSAGE_TYPE_ID
+            and data[EVENT_TYPE_INDEX] != EVENT_TYPE_ID
+        ):
+            return
+
+        # use data[..]
+        print(self.name, "'s Event Received")
+
+        return
+
+class MESH:
+    def __init__(self, mesh_type: MESH_TYPE, event: MESH_EVENT = None):
+        self.name = mesh_type.value
+        self.event = MESH_EVENT() if event == None else event
+        self.event.name = self.name
+
+    async def scan(self):
         while True:
-            print("scan...")
+            print("scan ", self.name ,"...")
             try:
                 return next(
                     d
@@ -54,19 +76,3 @@ class MESH:
 
             await asyncio.sleep(10)
 
-
-class MESH_EVENT:
-    def on_receive_indicate(sender, data: bytearray):
-        data = bytes(data)
-        print("[indicate]", data)
-
-    def on_receive_notify(sender, data: bytearray):
-        if (
-            data[MESSAGE_TYPE_INDEX] != MESSAGE_TYPE_ID
-            and data[EVENT_TYPE_INDEX] != EVENT_TYPE_ID
-        ):
-            return
-
-        # use data[..]
-
-        return
