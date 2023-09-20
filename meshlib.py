@@ -20,6 +20,7 @@ class MESH_TYPE(Enum):
     MESH_100BU = "MESH-100BU"
     MESH_100LE = "MESH-100LE"
     MESH_100GP = "MESH-100GP"
+    MESH_100AC = "MESH-100AC"
 
 
 class MESH_EVENT:
@@ -75,4 +76,6 @@ class MESH:
             print(device.name, "is connected.")
 
             await asyncio.sleep(10)
+
+            print(device.name, "is Ended.")
 
