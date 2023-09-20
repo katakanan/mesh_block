@@ -15,6 +15,8 @@ STATE_INDEX = 2
 MESSAGE_TYPE_ID = 1
 EVENT_TYPE_ID = 0
 
+class MESH_MSG(Enum):
+    EXIT = 0
 
 class MESH_TYPE(Enum):
     MESH_100BU = "MESH-100BU"
@@ -22,10 +24,10 @@ class MESH_TYPE(Enum):
     MESH_100GP = "MESH-100GP"
     MESH_100AC = "MESH-100AC"
 
-
 class MESH_EVENT:
     def __init__(self) -> None:
         self.name = ""
+        self.event_counter = 0
 
     def on_receive_indicate(self, sender, data: bytearray):
         data = bytes(data)
@@ -39,7 +41,8 @@ class MESH_EVENT:
             return
 
         # use data[..]
-        print(self.name, "'s Event Received")
+        print(self.name, "'s Event Received", self.event_counter)
+        self.event_counter = self.event_counter + 1
 
         return
 
@@ -48,6 +51,10 @@ class MESH:
         self.name = mesh_type.value
         self.event = MESH_EVENT() if event == None else event
         self.event.name = self.name
+        self.queue = asyncio.Queue()
+
+    async def push_msg(self, msg:MESH_MSG):
+        await self.queue.put(msg)
 
     async def scan(self):
         while True:
@@ -74,8 +81,15 @@ class MESH:
                 CORE_WRITE_UUID, pack("<BBBB", 0, 2, 1, 3), response=True
             )
             print(device.name, "is connected.")
-
-            await asyncio.sleep(10)
+            self.queue = asyncio.Queue()
+            
+            while True:
+                await asyncio.sleep(0.5)
+                if not self.queue.empty() and await self.queue.get() == MESH_MSG.EXIT:
+                    print(device.name, "Exit msg received")
+                    await client.disconnect() #?
+                    self.event.event_counter = self.event.event_counter - 1
+                    break
 
             print(device.name, "is Ended.")
 
