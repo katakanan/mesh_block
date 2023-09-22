@@ -51,7 +51,8 @@ async def scan(prefix="MESH-100"):
 
 async def main():
     # Scan device
-    device = await scan("MESH-100BU")
+    # device = await scan("MESH-100BU")
+    device = await scan()
     print("found", device.name, device.address)
 
     # Connect device

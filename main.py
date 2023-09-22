@@ -10,8 +10,11 @@ class App:
     def __init__(self, root):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        self.bu_block = MESH(MESH_TYPE.MESH_100BU)
-        self.block_list = [self.bu_block]
+        self.block_list = []
+        # self.bu_block = MESH(MESH_TYPE.MESH_100BU)
+        # self.block_list.append(self.bu_block)
+        self.le_block = MESH(MESH_TYPE.MESH_100LE)
+        self.block_list.append(self.le_block)
 
         self.root = root
         root.title("Tkinter with asyncio")
@@ -30,14 +33,32 @@ class App:
         )
         test_btn.pack()
 
-        msg_btn = tk.Button(
+        LED_R_btn = tk.Button(
             root,
-            text="send msg",
+            text="R",
             command=lambda: loop.run_in_executor(
-                None, self.send_msg(self.bu_block, MESH_MSG.HOGE)
+                None, self.send_msg(self.le_block, MESH_MSG.LE_R)
             ),
         )
-        msg_btn.pack()
+        LED_R_btn.pack()
+
+        LED_G_btn = tk.Button(
+            root,
+            text="G",
+            command=lambda: loop.run_in_executor(
+                None, self.send_msg(self.le_block, MESH_MSG.LE_G)
+            ),
+        )
+        LED_G_btn.pack()
+
+        LED_B_btn = tk.Button(
+            root,
+            text="B",
+            command=lambda: loop.run_in_executor(
+                None, self.send_msg(self.le_block, MESH_MSG.LE_B)
+            ),
+        )
+        LED_B_btn.pack()
 
     def send_msg(self, block, msg):
         loop = asyncio.new_event_loop()
