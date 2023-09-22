@@ -15,14 +15,18 @@ STATE_INDEX = 2
 MESSAGE_TYPE_ID = 1
 EVENT_TYPE_ID = 0
 
+
 class MESH_MSG(Enum):
     EXIT = 0
+    HOGE = 1
+
 
 class MESH_TYPE(Enum):
     MESH_100BU = "MESH-100BU"
     MESH_100LE = "MESH-100LE"
     MESH_100GP = "MESH-100GP"
     MESH_100AC = "MESH-100AC"
+
 
 class MESH_EVENT:
     def __init__(self) -> None:
@@ -41,10 +45,11 @@ class MESH_EVENT:
             return
 
         # use data[..]
-        print(self.name, "'s Event Received", self.event_counter)
+        print(self.name, "'s Event is Received.", self.event_counter)
         self.event_counter = self.event_counter + 1
 
         return
+
 
 class MESH:
     def __init__(self, mesh_type: MESH_TYPE, event: MESH_EVENT = None):
@@ -53,12 +58,12 @@ class MESH:
         self.event.name = self.name
         self.queue = asyncio.Queue()
 
-    async def push_msg(self, msg:MESH_MSG):
+    async def push_msg(self, msg: MESH_MSG):
         await self.queue.put(msg)
 
     async def scan(self):
         while True:
-            print("scan ", self.name ,"...")
+            print("scan ", self.name, "...")
             try:
                 return next(
                     d
@@ -82,14 +87,26 @@ class MESH:
             )
             print(device.name, "is connected.")
             self.queue = asyncio.Queue()
-            
+
             while True:
-                await asyncio.sleep(0.5)
-                if not self.queue.empty() and await self.queue.get() == MESH_MSG.EXIT:
-                    print(device.name, "Exit msg received")
-                    await client.disconnect() #?
-                    self.event.event_counter = self.event.event_counter - 1
-                    break
+                await asyncio.sleep(0.01)  # need to recieve BLE event
+                if not self.queue.empty():
+                    msg = await self.queue.get()
+                    match msg:
+                        case MESH_MSG.EXIT:
+                            print(device.name, "Exit msg is received.")
+                            await client.disconnect()  # ?
+                            self.event.event_counter = self.event.event_counter - 1
+                            break
+                        case MESH_MSG.HOGE:
+                            print("hoge!")
+
+                # if not self.queue.empty() and await self.queue.get() == MESH_MSG.EXIT:
+                #     print(device.name, "Exit msg is received.")
+                #     await client.disconnect()  # ?
+                #     self.event.event_counter = self.event.event_counter - 1
+                #     break
+                # if not self.queue.empty() and await self.queue.get() == MESH_MSG.HOGE:
+                #     print("hoge!")
 
             print(device.name, "is Ended.")
-

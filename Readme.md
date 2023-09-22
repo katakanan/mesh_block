@@ -1,1 +1,1 @@
-This is prototype project
+This is a prototype project.
