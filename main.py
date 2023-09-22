@@ -2,41 +2,89 @@ import asyncio
 from meshlib import MESH, MESH_TYPE, MESH_MSG
 import tkinter as tk
 
-bu_block = MESH(MESH_TYPE.MESH_100BU)
+# bu_block = MESH(MESH_TYPE.MESH_100BU)
 # ac_block = MESH(MESH_TYPE.MESH_100AC)
+
 
 class App:
     def __init__(self, root):
-
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        self.block_list = []
+        # self.bu_block = MESH(MESH_TYPE.MESH_100BU)
+        # self.block_list.append(self.bu_block)
+        self.le_block = MESH(MESH_TYPE.MESH_100LE)
+        self.block_list.append(self.le_block)
 
         self.root = root
         root.title("Tkinter with asyncio")
         label = tk.Label(root, text="Hello, Tkinter!")
         label.pack()
-        button = tk.Button(root, text="Find Block", command=lambda:loop.run_in_executor(None, tasks))
+        button = tk.Button(
+            root,
+            text="Find Block",
+            command=lambda: loop.run_in_executor(None, self.mesh_tasks),
+        )
         button.pack()
-        test_btn = tk.Button(root, text="hello", command=lambda:loop.run_in_executor(None, say_hello))
+        test_btn = tk.Button(
+            root,
+            text="Exit",
+            command=lambda: loop.run_in_executor(None, self.exit_connection),
+        )
         test_btn.pack()
 
-def say_hello():
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(exit_ble([bu_block]))
-    print("Exit")
+        LED_R_btn = tk.Button(
+            root,
+            text="R",
+            command=lambda: loop.run_in_executor(
+                None, self.send_msg(self.le_block, MESH_MSG.LE_R)
+            ),
+        )
+        LED_R_btn.pack()
 
-async def exit_ble(block_list):
-    tasks = [block.push_msg(MESH_MSG.EXIT) for block in block_list]
-    await asyncio.gather(*tasks)
+        LED_G_btn = tk.Button(
+            root,
+            text="G",
+            command=lambda: loop.run_in_executor(
+                None, self.send_msg(self.le_block, MESH_MSG.LE_G)
+            ),
+        )
+        LED_G_btn.pack()
 
-def tasks():
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(mesh_tasks([bu_block]))
+        LED_B_btn = tk.Button(
+            root,
+            text="B",
+            command=lambda: loop.run_in_executor(
+                None, self.send_msg(self.le_block, MESH_MSG.LE_B)
+            ),
+        )
+        LED_B_btn.pack()
 
-async def mesh_tasks(block_list):
-    tasks = [asyncio.create_task(block.main()) for block in block_list]
+    def send_msg(self, block, msg):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.async_send_msg(block, msg))
 
-    await asyncio.gather(*tasks)
+    async def async_send_msg(self, block, msg):
+        await asyncio.gather(block.push_msg(msg))
+        print("Send", msg, "to", block.name)
+
+    def exit_connection(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.async_exit_connection())
+        print("Exit")
+
+    async def async_exit_connection(self):
+        tasks = [block.push_msg(MESH_MSG.EXIT) for block in self.block_list]
+        await asyncio.gather(*tasks)
+
+    def mesh_tasks(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.async_mesh_tasks())
+
+    async def async_mesh_tasks(self):
+        tasks = [asyncio.create_task(block.main()) for block in self.block_list]
+        await asyncio.gather(*tasks)
+
 
 def main():
     root = tk.Tk()
@@ -44,7 +92,7 @@ def main():
     app = App(root)
     root.mainloop()
 
+
 # Initialize event loop
 if __name__ == "__main__":
     main()
-
